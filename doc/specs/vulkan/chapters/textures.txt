@@ -601,8 +601,8 @@ endif::editing-notes[]
 
 If the sname:VkPhysicalDeviceSparseProperties property
 pname:residencyNonResidentStrict is true, a sparse unbound texel is replaced
-with zero values in the same fashion as described for reads from buffer
-resources above.
+with 0 or 0.0 values for integer and floating-point components of the image
+format, respectively.
 
 If pname:residencyNonResidentStrict is false, the read must: be safe, but
 the value of the sparse unbound texel is undefined.
@@ -611,38 +611,39 @@ the value of the sparse unbound texel is undefined.
 [[textures-depth-compare-operation]]
 === Depth Compare Operation
 
-If the image view's format is depth and the operation is a code:Dref
-instruction, a depth comparison is performed. The initial value of the
-result latexmath:[$r$] is latexmath:[$0.0$], which is replaced with
-latexmath:[$1.0$] if the result of the compare operation is
-latexmath:[$true$]. The compare operation is selected by the pname:compareOp
+If the image view has a depth/stencil format, the depth component is
+selected by the pname:aspectMask, and the operation is a code:Dref
+instruction, a depth comparison is performed. The value of the
+result latexmath:[$D$] is latexmath:[$1.0$] if the result of the
+compare operation is latexmath:[$true$], and latexmath:[$0.0$]
+otherwise. The compare operation is selected by the pname:compareOp
 member of the sampler.
 
 [latexmath]
 +++++++++++++++++++
 \begin{align*}
-r & = 0.0 & \textrm{initial value} \\
-r & = 1.0
+D & = 1.0 &
   \begin{cases}
-    D_{ref} \leq D_{t} & \textrm{for LEQUAL}   \\
-    D_{ref} \geq D_{t} & \textrm{for GEQUAL}   \\
-    D_{ref} < D_{t}    & \textrm{for LESS}     \\
-    D_{ref} > D_{t}    & \textrm{for GREATER}  \\
-    D_{ref} = D_{t}    & \textrm{for EQUAL}    \\
-    D_{ref} \neq D_{t} & \textrm{for NOTEQUAL} \\
-    true               & \textrm{for ALWAYS}   \\
-    false              & \textrm{for NEVER}
-  \end{cases}
+    D_{ref} \leq D & \textrm{for LEQUAL}   \\
+    D_{ref} \geq D & \textrm{for GEQUAL}   \\
+    D_{ref} < D    & \textrm{for LESS}     \\
+    D_{ref} > D    & \textrm{for GREATER}  \\
+    D_{ref} = D    & \textrm{for EQUAL}    \\
+    D_{ref} \neq D & \textrm{for NOTEQUAL} \\
+    true           & \textrm{for ALWAYS}   \\
+    false          & \textrm{for NEVER}
+  \end{cases} \\
+D & = 0.0 & \textrm{otherwise}
 \end{align*}
 +++++++++++++++++++
 
-where:
+where, in the depth comparison:
 
 [latexmath]
 +++++++++++++++++++
 \begin{align*}
 & D_{ref} = shaderOp.D_{ref} & \textrm{(from optional SPIR-V operand)} \\
-& D_{t}                      & \textrm{texel depth value}
+& D                          & \textrm{texel depth value}
 \end{align*}
 +++++++++++++++++++
 
@@ -1518,10 +1519,10 @@ pname:addressModeW parameters of the sampler, respectively.
 === Texel Gathering
 
 SPIR-V instructions with code:Gather in the name return a vector derived
-from a 2x2 block of texels in the base level of the image view. The rules
-for the etext:LINEAR minification filter are applied to identify the four
-selected texels. Each texel is then converted to an RGBA value according to
-<<textures-conversion-to-rgba,conversion to RGBA>> and then
+from a 2x2 rectangular region of texels in the base level of the image view.
+The rules for the etext:LINEAR minification filter are applied to identify the
+four selected texels. Each texel is then converted to an RGBA value according
+to <<textures-conversion-to-rgba,conversion to RGBA>> and then
 <<textures-component-swizzle,swizzled>>. A four-component vector is then
 assembled by taking the component indicated by the code:Component value in
 the instruction from the swizzled color value of the four texels:
